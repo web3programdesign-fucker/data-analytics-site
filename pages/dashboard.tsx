@@ -1,11 +1,31 @@
 import { useEffect, useMemo, useState } from 'react'
 import Papa from 'papaparse'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js'
+import { Line, Bar } from 'react-chartjs-2'
 
-const VegaLite = dynamic(() => import('react-vega').then(mod => mod.VegaLite), { ssr: false })
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
-type Row = { [k: string]: string }
+type Row = { [k: string]: any }
 
 export default function Dashboard() {
   const [rows, setRows] = useState<Row[]>([])
@@ -14,32 +34,48 @@ export default function Dashboard() {
       .then(r => r.text())
       .then(t => {
         const parsed = Papa.parse<Row>(t, { header: true, dynamicTyping: true })
-        setRows(parsed.data.filter(r => Object.keys(r).length > 0))
+        setRows(parsed.data.filter((r: any) => Object.keys(r).length > 0))
       })
   }, [])
 
-  const timeSeriesSpec = useMemo(() => ({
-    data: { name: 'table' },
-    mark: 'line',
-    encoding: {
-      x: { field: 'date', type: 'temporal', title: 'Date' },
-      y: { field: 'value', type: 'quantitative', title: 'Value' }
+  const labels = useMemo(() => rows.map(r => r.date), [rows])
+  const values = useMemo(() => rows.map(r => Number(r.value)), [rows])
+  const categories = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const r of rows) {
+      const c = String(r.category ?? 'Unknown')
+      map[c] = (map[c] || 0) + Number(r.value || 0)
     }
-  }), [])
+    return Object.keys(map).map(k => ({ category: k, value: map[k] }))
+  }, [rows])
 
-  const breakdownSpec = useMemo(() => ({
-    data: { name: 'table' },
-    mark: 'bar',
-    encoding: {
-      x: { field: 'category', type: 'ordinal', title: 'Category' },
-      y: { aggregate: 'sum', field: 'value', type: 'quantitative', title: 'Total Value' }
-    }
-  }), [])
+  const lineData = {
+    labels,
+    datasets: [
+      {
+        label: 'Value',
+        data: values,
+        borderColor: 'rgb(37, 99, 235)',
+        backgroundColor: 'rgba(37, 99, 235, 0.5)'
+      }
+    ]
+  }
+
+  const barData = {
+    labels: categories.map(c => c.category),
+    datasets: [
+      {
+        label: 'Total Value',
+        data: categories.map(c => c.value),
+        backgroundColor: ['#60A5FA', '#34D399', '#FBBF24', '#F87171']
+      }
+    ]
+  }
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">Example Dashboard</h2>
+        <h2 className="text-xl font-semibold">Example Dashboard (Chart.js)</h2>
         <div className="flex gap-3">
           <Link href="/"><a className="text-sm text-indigo-600">Home</a></Link>
           <Link href="/upload"><a className="text-sm text-indigo-600">Upload CSV</a></Link>
@@ -50,7 +86,7 @@ export default function Dashboard() {
         <div className="p-4 bg-white rounded shadow">
           <h3 className="mb-2 font-medium">Time Series</h3>
           {rows.length > 0 ? (
-            <VegaLite spec={timeSeriesSpec} data={{ table: rows.map(r => ({ date: r.date, value: Number(r.value) })) }} />
+            <Line data={lineData} />
           ) : (
             <p className="text-sm text-gray-500">No data loaded. Upload CSV or use the sample CSV.</p>
           )}
@@ -59,7 +95,7 @@ export default function Dashboard() {
         <div className="p-4 bg-white rounded shadow">
           <h3 className="mb-2 font-medium">Category Breakdown</h3>
           {rows.length > 0 ? (
-            <VegaLite spec={breakdownSpec} data={{ table: rows.map(r => ({ category: r.category, value: Number(r.value) })) }} />
+            <Bar data={barData} />
           ) : (
             <p className="text-sm text-gray-500">No data loaded.</p>
           )}

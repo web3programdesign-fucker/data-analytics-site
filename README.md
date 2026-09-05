@@ -1,26 +1,27 @@
 # Data Analytics Starter
 
-This repository is a minimal starter for a data analytics site built with Next.js (TypeScript), Tailwind CSS, and Vega-Lite (via react-vega).
+This repository is a minimal starter for a data analytics site built with Next.js (TypeScript), Tailwind CSS, and Chart.js (react-chartjs-2).
 
 Features included:
 - CSV upload page with client-side parsing (PapaParse)
 - Simple API route (/api/upload) that echoes received rows
-- Dashboard page that loads sample CSV and renders a time series and category breakdown
+- Dashboard page that loads sample CSV and renders charts with Chart.js
 - Tailwind CSS setup
 
 Local development
-1. git clone https://github.com/web3programdesign-fucker/data-analytics-site.git
-2. cd data-analytics-site
-3. npm install
-4. npm run dev
-5. Open http://localhost:3000
+1. Install pnpm if you don't have it: npm i -g pnpm
+2. git clone https://github.com/web3programdesign-fucker/data-analytics-site.git
+3. cd data-analytics-site
+4. pnpm install
+5. pnpm dev
+6. Open http://localhost:3000
 
-Deploy to Vercel
-1. Sign in to vercel.com and connect your GitHub account
-2. Import the repository web3programdesign-fucker/data-analytics-site
-3. Framework: Next.js (defaults)
-4. Environment variables: none for this starter
-5. Deploy — Vercel will build and publish the site
+Deploy to Vercel via GitHub Actions
+1. Create a Vercel token (do NOT paste it here): Vercel → Settings → Tokens → Create Token.
+2. Get VERCEL_ORG_ID and VERCEL_PROJECT_ID from Vercel Project → Settings → General.
+3. Add GitHub Actions secrets in this repo: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+4. The repository has a GitHub Actions workflow (.github/workflows/vercel-deploy.yml) that will build with pnpm and deploy to Vercel using those secrets.
 
 Notes
-- This is a scaffold intended for prototyping. Add persistent storage, authentication, and CI as needed.
+- I replaced Vega with Chart.js to reduce build weight and speed up builds.
+- Do NOT commit or paste tokens in this repository or chat. Rotate any tokens you may have exposed.
